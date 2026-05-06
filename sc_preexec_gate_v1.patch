@@ -1,0 +1,63 @@
+diff --git a/kernel/fork.c b/kernel/fork.c
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@
+ #else
+ #define rv_task_fork(p) do {} while (0)
+ #endif
++
++struct sc_gate_result {
++	bool allowed;
++	const char *reason;
++};
++
++static struct sc_gate_result sc_preexec_gate(struct task_struct *p,
++					     const struct kernel_clone_args *args,
++					     u64 clone_flags)
++{
++	if (!p)
++		return (struct sc_gate_result){ false, "null task_struct" };
++
++	if (!args)
++		return (struct sc_gate_result){ false, "null clone_args" };
++
++	if (!p->cred || !p->real_cred)
++		return (struct sc_gate_result){ false, "missing credentials" };
++
++	if (!p->sighand)
++		return (struct sc_gate_result){ false, "missing signal boundary" };
++
++	if (!p->nsproxy)
++		return (struct sc_gate_result){ false, "missing namespace boundary" };
++
++	if (!p->files && !(clone_flags & CLONE_FILES) && !(p->flags & PF_KTHREAD))
++		return (struct sc_gate_result){ false, "missing file boundary" };
++
++	if (!p->mm && !(p->flags & PF_KTHREAD))
++		return (struct sc_gate_result){ false, "missing memory context" };
++
++	if ((clone_flags & CLONE_THREAD) && !(clone_flags & CLONE_SIGHAND))
++		return (struct sc_gate_result){ false, "CLONE_THREAD without CLONE_SIGHAND" };
++
++	if ((clone_flags & CLONE_SIGHAND) && !(clone_flags & CLONE_VM))
++		return (struct sc_gate_result){ false, "CLONE_SIGHAND without CLONE_VM" };
++
++	return (struct sc_gate_result){ true, "coherence gate passed" };
++}
+@@
+ 	retval = copy_thread(p, args);
+ 	if (retval)
+ 		goto bad_fork_cleanup_io;
++
++	{
++		struct sc_gate_result sc_result;
++
++		sc_result = sc_preexec_gate(p, args, clone_flags);
++
++		if (!sc_result.allowed) {
++			pr_warn("SC_PREEXEC_GATE: blocked fork: %s\n",
++				sc_result.reason);
++			retval = -EPERM;
++			goto bad_fork_cleanup_thread;
++		}
++	}
