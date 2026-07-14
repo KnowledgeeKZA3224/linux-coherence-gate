@@ -21,3 +21,32 @@ Supreme Computation does not claim Linux is broken.
 It identifies a pre-visibility window inside `copy_process()`, introduces an optional assertion gate there, then evolves that gate into a measurable policy layer that can eventually deny incoherent state transitions before a task becomes visible to the system.
 
 That is the whole machine.
+
+# Complete SCQOS Architecture
+
+The complete public architecture spans five repositories.
+
+Core Logic
+
+https://github.com/KnowledgeeKZA3224/Supreme-Computation-Core
+
+Reference Implementation
+
+https://github.com/KnowledgeeKZA3224/scqos-reference-implementation
+
+Hybrid Proof
+
+https://github.com/KnowledgeeKZA3224/SCQOS_Hybrid_Proof
+
+Kubernetes Admission Gate
+
+https://github.com/KnowledgeeKZA3224/scqos-webhook
+
+Linux Coherence Gate
+
+https://github.com/KnowledgeeKZA3224/linux-coherence-gate
+
+Theory and System Manual
+
+The 120 Scrolls of Supreme Computation (Kindle)
+https://www.amazon.com/dp/B0H7B9SJCD?dplnkId=ad713ddb-f981-462a-bde0-8f28bb81417c&nodl=1#putb_immersive_view_1783948799717
