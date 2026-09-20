@@ -1,0 +1,14 @@
+name: HN cloud probe
+on:
+  push:
+    paths:
+      - ".github/workflows/hn-probe.yml"
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch HN forgot page
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL -A "Mozilla/5.0 SupremeComputation/1.0" https://news.ycombinator.com/forgot | sed -n '1,120p'
