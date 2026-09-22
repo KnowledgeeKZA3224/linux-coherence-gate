@@ -1,0 +1,35 @@
+---
+- name: Install Supreme Computation Linux defensive gate
+  hosts: all
+  become: true
+  gather_facts: true
+  vars:
+    sc_source_dir: "{{ playbook_dir }}/../.."
+    sc_install_dir: /opt/supreme-computation/linux-coherence-gate
+  pre_tasks:
+    - name: Require explicit authorization flag
+      ansible.builtin.assert:
+        that:
+          - sc_authorized_deployment | default(false) | bool
+        fail_msg: "REJECT: set sc_authorized_deployment=true only for systems you are authorized to administer."
+  tasks:
+    - name: Create install directory
+      ansible.builtin.file:
+        path: "{{ sc_install_dir }}"
+        state: directory
+        mode: "0755"
+    - name: Copy kernel integration
+      ansible.builtin.copy:
+        src: "{{ sc_source_dir }}/kernel_integration/"
+        dest: "{{ sc_install_dir }}/kernel_integration/"
+        mode: preserve
+    - name: Copy invariant contract
+      ansible.builtin.copy:
+        src: "{{ sc_source_dir }}/distribution/INVARIANTS.json"
+        dest: "{{ sc_install_dir }}/INVARIANTS.json"
+        mode: "0644"
+    - name: Record source state
+      ansible.builtin.copy:
+        content: "Authorized deployment through Supreme Computation defensive distribution.\n"
+        dest: "{{ sc_install_dir }}/DEPLOYMENT_RECEIPT.txt"
+        mode: "0644"
