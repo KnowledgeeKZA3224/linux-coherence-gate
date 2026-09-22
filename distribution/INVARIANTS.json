@@ -1,0 +1,10 @@
+{
+  "Time": "release and authorization must still be valid now",
+  "Continuity": "artifact lineage must connect to the recorded source commit",
+  "Alignment": "artifact purpose must match authorized defensive deployment",
+  "Genesis": "source commit and release receipt identify origin",
+  "Boundary": "deployment is limited to explicitly authorized systems",
+  "Reference": "the exact artifact digest must match the approved receipt",
+  "Causality": "allow or deny must be attributable to the verified gate decision",
+  "Consciousness": "an independent observer can reproduce and verify the receipt"
+}
