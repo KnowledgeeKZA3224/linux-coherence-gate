@@ -1,39 +1,55 @@
-# Supreme Computation Defensive Distribution
+# 📦 Supreme Computation Defensive Distribution
 
-One source state, one deterministic release, many independently verifiable mirrors.
+## Same source. Same bytes. Same proof.
 
-Pipeline:
+This directory answers one question:
 
-SOURCE -> BUILD -> 8-INVARIANT CHECK -> HASH -> PACKAGE -> AUTHORIZED DEPLOY -> MIRROR -> VERIFY -> RECEIPT
+> How do you move the gate to another authorized machine without turning verification into trust?
 
-This layer does not silently install, hide inside unrelated dependencies, or deploy without authorization. It packages the existing Linux pre-execution gate as auditable defensive infrastructure.
+The path is:
 
-## Invariants
+`SOURCE → BUILD → HASH → PACKAGE → VERIFY → AUTHORIZED DEPLOY → RECEIPT`
 
-Time, Continuity, Alignment, Genesis, Boundary, Reference, Causality, Consciousness/Observer.
+The release now carries the whole circuit:
 
-## Commands
+- 🧠 Linux gate artifacts;
+- 🚧 explicit deployment boundary;
+- 🧾 source reference, hashes, invariant verifier, and proof receipt;
+- 🐧 live BPF-LSM integration files;
+- 🔩 source-layer patch blueprint.
 
-Build a release bundle:
+## Build
 
 ```bash
 ./distribution/build_release.sh
 ```
 
-Verify a bundle:
+## Verify
 
 ```bash
-python3 distribution/verify_release.py dist/sc-linux-coherence-gate-*.tar.gz dist/*.sha256
+python3 distribution/verify_release.py   dist/sc-linux-coherence-gate-*.tar.gz   dist/sc-linux-coherence-gate-*.tar.gz.sha256
 ```
 
-Deploy only to systems you administer or have explicit authorization to manage:
+Verification checks the outer artifact hash, every internal file hash, the eight-invariant contract, the pinned Linux source identity, the source-layer proof receipt, and the patch digest.
+
+## Deploy boundary
+
+The Ansible and Puppet adapters are for machines you own or are explicitly authorized to administer.
+
+They do **not** secretly apply the source patch.
+
+Source patch application remains a separate explicit consequence:
 
 ```bash
-ansible-playbook distribution/ansible/playbook.yml -i inventory --limit authorized_hosts
+SC_AUTHORIZED=1 ./install_local.sh /path/to/linux-v7.0-source
 ```
 
-The Puppet adapter is under `distribution/puppet`.
+No silent installation. No credential bypass. No propagation to unapproved hosts.
 
 ## Mirrors
 
-The generated SHA-256 digest is the canonical cross-mirror reference. Publish the same release artifact to GitHub Releases, approved object storage, and optional content-addressed mirrors such as IPFS/Arweave. Never publish different bytes under the same release identity.
+The artifact SHA-256 is the cross-mirror identity.
+
+GitHub Releases, approved object storage, IPFS, Arweave, or another mirror may carry the same artifact.
+
+**Different bytes must never share the same release identity.**

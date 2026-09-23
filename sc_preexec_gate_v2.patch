@@ -1,0 +1,81 @@
+diff --git a/kernel/fork.c b/kernel/fork.c
+index bc2bf58..a4b2de7 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1946,6 +1946,58 @@ static void rv_task_fork(struct task_struct *p)
+ #define rv_task_fork(p) do {} while (0)
+ #endif
+ 
++/*
++ * Supreme Computation pre-execution coherence gate.
++ * Disabled by default; enable with kernel cmdline: sc_preexec_gate=1
++ */
++static bool sc_preexec_gate_enabled;
++
++static int __init sc_preexec_gate_setup(char *str)
++{
++	return kstrtobool(str, &sc_preexec_gate_enabled);
++}
++early_param("sc_preexec_gate", sc_preexec_gate_setup);
++
++static int sc_preexec_gate(struct task_struct *p,
++			   const struct kernel_clone_args *args,
++			   u64 clone_flags, const char **reason)
++{
++	if (!p || !args) {
++		*reason = "missing task or clone arguments";
++		return -EPERM;
++	}
++	if (!p->cred || !p->real_cred) {
++		*reason = "missing credentials";
++		return -EPERM;
++	}
++	if (!p->sighand || !p->signal) {
++		*reason = "missing signal boundary";
++		return -EPERM;
++	}
++	if (!p->nsproxy) {
++		*reason = "missing namespace boundary";
++		return -EPERM;
++	}
++	if (!args->no_files && !p->files && !(p->flags & PF_KTHREAD)) {
++		*reason = "missing file boundary";
++		return -EPERM;
++	}
++	if (!p->mm && !(p->flags & PF_KTHREAD)) {
++		*reason = "missing memory context";
++		return -EPERM;
++	}
++	if ((clone_flags & CLONE_THREAD) && !(clone_flags & CLONE_SIGHAND)) {
++		*reason = "CLONE_THREAD without CLONE_SIGHAND";
++		return -EPERM;
++	}
++	if ((clone_flags & CLONE_SIGHAND) && !(clone_flags & CLONE_VM)) {
++		*reason = "CLONE_SIGHAND without CLONE_VM";
++		return -EPERM;
++	}
++	*reason = "coherent";
++	return 0;
++}
++
+ static bool need_futex_hash_allocate_default(u64 clone_flags)
+ {
+ 	if ((clone_flags & (CLONE_THREAD | CLONE_VM)) != (CLONE_THREAD | CLONE_VM))
+@@ -2233,6 +2285,17 @@ __latent_entropy struct task_struct *copy_process(
+ 	if (retval)
+ 		goto bad_fork_cleanup_io;
+ 
++	if (unlikely(sc_preexec_gate_enabled)) {
++		const char *sc_reason;
++
++		retval = sc_preexec_gate(p, args, clone_flags, &sc_reason);
++		if (retval) {
++			pr_warn_ratelimited("SC_PREEXEC_GATE: denied fork: %s\n",
++					    sc_reason);
++			goto bad_fork_cleanup_thread;
++		}
++	}
++
+ 	stackleak_task_init(p);
+ 
+ 	if (pid != &init_struct_pid) {

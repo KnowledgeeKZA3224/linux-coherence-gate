@@ -1,0 +1,8 @@
+{
+  "linux_tag": "v7.0",
+  "tag_object_sha1": "3131ff5a117498bb4b9db3a238bb311cbf8383ce",
+  "commit_sha1": "028ef9c96e96197026887c0f092424679298aae8",
+  "kernel_fork_c_sha256": "b393692a3f342f9a197da17a3f94754faafc4a44ef06b35e9867d5dc6dc8baa0",
+  "source_url": "https://github.com/torvalds/linux/blob/028ef9c96e96197026887c0f092424679298aae8/kernel/fork.c",
+  "tag_url": "https://github.com/torvalds/linux/releases/tag/v7.0"
+}

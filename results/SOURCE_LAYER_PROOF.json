@@ -1,0 +1,30 @@
+{
+  "allowed": true,
+  "checks": {
+    "Alignment": true,
+    "Boundary": true,
+    "Causality": true,
+    "Consciousness": true,
+    "Continuity": true,
+    "Genesis": true,
+    "Reference": true,
+    "Time": true
+  },
+  "evidence": {
+    "artifact_digest": "9991d9ff62cddb0033b2d6e7e73452f699959f73ae1bd361d0e4258f7dc0e554",
+    "authorized": true,
+    "cause": "verify exact source before consequence",
+    "expected_parent_digest": "028ef9c96e96197026887c0f092424679298aae8",
+    "expected_reference_digest": "b393692a3f342f9a197da17a3f94754faafc4a44ef06b35e9867d5dc6dc8baa0",
+    "genesis": "linux-v7.0@028ef9c96e96197026887c0f092424679298aae8",
+    "intent_digest": "9991d9ff62cddb0033b2d6e7e73452f699959f73ae1bd361d0e4258f7dc0e554",
+    "mode": "verify",
+    "observer": "knowledgee-kza-HP-Pavilion-Notebook",
+    "parent_digest": "028ef9c96e96197026887c0f092424679298aae8",
+    "reference_digest": "b393692a3f342f9a197da17a3f94754faafc4a44ef06b35e9867d5dc6dc8baa0",
+    "timestamp": "2026-09-23T04:13:52.414525+00:00"
+  },
+  "failed": [],
+  "patch_sha256": "9991d9ff62cddb0033b2d6e7e73452f699959f73ae1bd361d0e4258f7dc0e554",
+  "receipt_sha256": "f7ba5f5be5848331acf1fe8b78a3630796299fa8962456c432c96227feb5af17"
+}

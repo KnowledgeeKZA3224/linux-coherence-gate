@@ -1,44 +1,60 @@
 # Patch Notes
 
-**sc_preexec_gate — v1**
+## `sc_preexec_gate_v2.patch`
 
-## Honest Assessment
+### Status
 
-v1 is an assertion layer, not a final enforcement gate.
+**Locally verified against pinned Linux v7.0 source.**
 
-This is stated plainly because the kernel community values technical honesty. Presenting v1 as more than it is would weaken the research.
+Pinned commit:
 
-## What v1 Does
+`028ef9c96e96197026887c0f092424679298aae8`
 
-- Adds a named `sc_preexec_gate()` inside `kernel/fork.c`
-- Places the gate after `copy_thread()` and before PID allocation and task visibility
-- Checks task, credential, signal, namespace, file, memory, and clone flag relationship invariants
-- Returns `-EPERM` if the gate fails
-- Uses existing fork cleanup path on failure
+Pinned `kernel/fork.c` SHA-256:
 
-## What v1 Does Not Do
+`b393692a3f342f9a197da17a3f94754faafc4a44ef06b35e9867d5dc6dc8baa0`
 
-- It does not yet catch a new class of kernel failure
-- It reasserts state Linux should already guarantee
-- It does not yet include tracepoints
-- It does not yet include a Kconfig guard
-- It does not yet include a loadable policy hook
+Patch SHA-256:
 
-## Why v1 Still Matters
+`9991d9ff62cddb0033b2d6e7e73452f699959f73ae1bd361d0e4258f7dc0e554`
 
-v1 names the boundary.
+---
 
-That matters because the research contribution begins with identifying the exact pre-visibility insertion point, anchoring it in real kernel code, and creating a path toward traceable and policy-extensible enforcement.
+## What v2 does
 
-## Patch File Status
+- adds an optional `sc_preexec_gate()` inside `kernel/fork.c`;
+- places the check after `copy_thread()`;
+- checks task, credential, signal, namespace, file, memory, and clone-flag relationships;
+- returns `-EPERM` on a denied state;
+- uses Linux's existing fork cleanup path;
+- rate-limits denial logging;
+- remains disabled unless `sc_preexec_gate=1` is supplied.
+## What v2 proves today
 
-`sc_preexec_gate_v1.patch` must be validated against a pinned Linux kernel tag using `git apply --check`.
+- exact upstream source is pinned;
+- exact source-file bytes are hashed;
+- exact patch bytes are hashed;
+- `git apply --check` passes against that source;
+- all eight SC invariant checks pass in the local verifier;
+- the policy tests fail closed when any one invariant is broken;
+- a machine-readable proof receipt is stored under `results/`.
 
-## Version Roadmap
+## What v2 does **not** prove yet
 
-| Version | Goal |
-|---|---|
-| v1 | Assertion layer. Named boundary. |
-| v2 | Tracepoints. Kconfig. |
-| v3 | Policy hooks. |
-| v4 | Novel invariant enforcement. |
+- no claim that this patched source has been built into the currently running kernel;
+- no claim that the patched kernel has booted;
+- no tracepoint timing claim yet;
+- no performance claim yet;
+- no claim that this gate covers every Linux consequence.
+
+Those are separate proof stages.
+
+## Relationship to the live BPF-LSM path
+
+The repository's BPF-LSM execution gate is already documented as a live enforcement path for explicitly governed process exec.
+
+The source patch is a second implementation path: a deeper source-level blueprint around process creation.
+
+Do not merge those claims.
+
+Exact boundaries are part of the proof.
