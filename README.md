@@ -1,177 +1,537 @@
-# 🧠⚡ Supreme Computation × Linux
+# 🐧⚡ SUPREME COMPUTATION × LINUX
 
-## **Your computer should not obey first and explain later.**
+## **We taught Linux to ask one more question before a governed action becomes reality.**
 
-Most computers work like this:
+Linux runs most of the invisible machinery behind modern computing.
 
-`COMMAND → EXECUTE → LOG → DETECT → REACT`
+Servers.  
+Cloud infrastructure.  
+Supercomputers.  
+Phones.  
+Banks.  
+AI systems.  
+Industrial systems.  
+The internet itself.
 
-Supreme Computation flips the order:
+Underneath all of that is the same basic event happening billions of times:
 
-`REQUEST → PROVE → PERMIT → EXECUTE → WITNESS → RECEIPT`
+# **software asks the computer to do something.**
 
-That is the entire idea.
+Start this process.
 
-**Before a governed consequence becomes real, make it prove it belongs.**
+Open this file.
 
-This used to sound like science fiction. This repository turns it into code, hashes, Linux hooks, reproducible checks, and receipts.
+Move this data.
 
-> **Nothing executes until it proves itself.**
+Call this service.
 
----
+Change this machine.
 
-## 🌐 What “digital sovereignty” means here
+For decades, computer security has become extraordinarily good at deciding **who is allowed to do what**.
 
-Digital sovereignty is not a slogan. It means the machine owner can inspect the rule, verify the exact bytes, reproduce the decision, control the deployment boundary, and keep final permission local.
-No invisible authority has to be trusted just because it says “allowed.”
+Linux has permissions.
 
-The blueprint is one circuit with three parts:
+Capabilities.
 
-### 1. 🧠 GATE — prove before consequence
-`sc_preexec_gate_v2.patch` places an optional coherence check inside Linux `copy_process()`, after `copy_thread()` and before PID allocation / task visibility.
+Security modules.
 
-### 2. 🚧 MOVE — deploy only inside an authorized boundary
-`distribution/` creates deterministic release artifacts. `deploy/` and the Ansible/Puppet adapters are explicitly opt-in. No silent installation. No propagation to unapproved machines.
+Namespaces.
 
-### 3. 🧾 PROVE — leave evidence another machine can verify
-`scctl.py`, `scpkg/policy.py`, SHA-256 manifests, and receipts bind the source, patch, intent, boundary, and observer together.
+Isolation.
 
-**One circuit:**
+Mandatory access control.
 
-`SOURCE → GATE → 8 CHECKS → HASH → AUTHORIZED DEPLOY → EXECUTE → RECEIPT`
+Audit systems.
 
----
+Those systems are real, mature, and enormously important.
 
-## 🔥 The source-layer proof
+Supreme Computation asks a different question:
 
-The source reference is Linux **v7.0**.
+# **WHAT MUST BE PROVEN ABOUT THIS EXACT CONSEQUENCE BEFORE THE MACHINE IS ALLOWED TO RELEASE IT?**
 
-- Linux v7.0 commit: `028ef9c96e96197026887c0f092424679298aae8`
-- v7.0 tag object: `3131ff5a117498bb4b9db3a238bb311cbf8383ce`
-- Exact `kernel/fork.c` SHA-256: `b393692a3f342f9a197da17a3f94754faafc4a44ef06b35e9867d5dc6dc8baa0`
-- SC v2 patch SHA-256: `9991d9ff62cddb0033b2d6e7e73452f699959f73ae1bd361d0e4258f7dc0e554`
-- Local proof receipt SHA-256: `f7ba5f5be5848331acf1fe8b78a3630796299fa8962456c432c96227feb5af17`
-- 8 / 8 invariant checks: **PASS**
-- Patch dry-run against the pinned source: **PASS**
-- Policy unit tests: **PASS**
-
-Open the receipts:
-
-- [Source reference](SOURCE_REFERENCE.json)
-- [Local source-layer proof](results/SOURCE_LAYER_PROOF.json)
-- [Artifact hashes](results/SOURCE_LAYER_ARTIFACTS.sha256)
-
-This proves the patch matches the exact pinned Linux source and the local gatekeeper accepts it across all eight required checks.
-
-**It does not claim the patched kernel has been built and booted yet.** That is a separate proof stage.
+That is the experiment documented here.
 
 ---
 
-## 🐧 The Linux source point is real
+# 🧠 THE SHIFT
 
-Inside Linux v7.0 `kernel/fork.c`:
+Traditional computing often looks roughly like this:
 
-- `copy_thread(p, args)` completes around line 2232.
-- Later Linux says: **“Make it visible to the rest of the system, but dont wake it up yet.”**
-- The v2 patch inserts the optional SC gate in that pre-visibility path.
+`REQUEST → AUTHORIZATION CHECK → EXECUTION → LOG / MONITOR / REACT`
 
-Exact upstream source:
+Supreme Computation adds another layer:
 
-- [Linux v7.0 `kernel/fork.c`](https://github.com/torvalds/linux/blob/028ef9c96e96197026887c0f092424679298aae8/kernel/fork.c#L2232-L2368)
-- [Linux v7.0 commit](https://github.com/torvalds/linux/commit/028ef9c96e96197026887c0f092424679298aae8)
-- [Linux Security Module documentation](https://docs.kernel.org/security/lsm.html)
-- [BPF LSM documentation](https://docs.kernel.org/bpf/prog_lsm.html)
+# `REQUEST → MEASURE → PROVE → PERMIT → EXECUTE → WITNESS → RECEIPT`
 
-That is why this is called a **pre-execution / pre-visibility coherence gate**.
+Not:
 
----
+> “This program is generally trusted.”
 
-## 👁️ The 8 checks — in normal human language
+But:
 
-**Time · Continuity · Alignment · Genesis · Boundary · Reference · Causality · Consciousness/Observer**
+> **Is this the exact program?**
 
-- ⏱️ **Time** — Is this proof valid now?
-- 🔗 **Continuity** — Does it connect to the exact state that came before it?
-- 🎯 **Alignment** — Are the bytes being executed the bytes that were approved?
-- 🌱 **Genesis** — Can we prove where this state came from?
-- 🚧 **Boundary** — Is this consequence inside the owner-approved limits?
-- 📍 **Reference** — Are we talking about the exact file, process, source, or target that was proven?
-- ➡️ **Causality** — Does the evidence actually justify the consequence?
-- 👁️ **Observer** — Can an independent witness reproduce what happened?
+> **From the exact source?**
 
-If the required proof breaks, the path fails closed.
----
+> **Under the exact authorization?**
 
-## 🚨 Already proven live
+> **Inside the exact boundary?**
 
-This repository also contains the live BPF-LSM execution path already demonstrated on Ubuntu.
+> **At the correct time?**
 
-For explicitly governed processes, Linux checks a one-time execution grant at `bprm_check_security`.
+> **Connected to the state that came before it?**
 
-✅ matching live grant → execution allowed
-🛑 missing / wrong / expired grant → `EACCES` before exec
+> **And can another observer prove afterward why Linux allowed it?**
 
-See [LIVE_PROOF.md](LIVE_PROOF.md) and [HOW_IT_WORKS.md](HOW_IT_WORKS.md).
+That sounds like something from science fiction.
 
-The live BPF-LSM proof and the source-layer patch are two different implementation paths for the same governing principle. The README keeps those boundaries separate on purpose.
+The important part is that we are not describing fiction anymore.
 
 ---
 
-## 🧬 Why publish the blueprint?
+# 🔥 WE PUT IT IN FRONT OF REAL LINUX EXECUTION.
 
-Because sovereignty that only one person can inspect is not sovereignty.
+On a live Ubuntu machine running:
 
-The point of documenting this publicly is that anyone can:
+`Linux 7.0.0-31-generic`
 
-1. read the rule;
-2. inspect the exact source boundary;
-3. reproduce the hashes;
-4. run the verifier;
-5. see why PERMIT or REJECT happened;
-6. deploy only on machines they own or are explicitly authorized to administer;
-7. create their own independent receipt.
+Supreme Computation was connected to Linux through **BPF-LSM** — Linux's programmable security-hook framework.
 
-No black box required.
+For a process explicitly placed under Supreme Computation governance, the path became:
 
-That is the blueprint.
----
-
-## 🛠️ Reproduce the source-layer proof
-
-Start from Linux v7.0 source at the pinned commit, then run:
-
-```bash
-./verify_local.sh /path/to/linux-v7.0-source
+```text
+PROGRAM REQUESTS EXECUTION
+          ↓
+EXACT PROGRAM IS MEASURED
+          ↓
+SUPREME COMPUTATION EVALUATES THE STATE
+          ↓
+8 INVARIANTS MUST RESOLVE
+          ↓
+PERMIT CREATES A ONE-TIME EXECUTION GRANT
+          ↓
+LINUX CHECKS THAT GRANT
+          ↓
+       EXECUTE
+          OR
+        EACCES
 ```
 
-To apply the patch to an explicitly authorized source tree:
+That last part matters.
 
-```bash
-SC_AUTHORIZED=1 ./install_local.sh /path/to/linux-v7.0-source
+The decision was not sitting in a dashboard.
+
+It was not an AI recommendation.
+
+It was not:
+
+> “⚠️ We think this might be dangerous.”
+
+Linux itself enforced the boundary.
+
+### Correct grant:
+
+# ✅ EXECUTED
+
+### Governed process with no grant:
+
+# 🛑 BLOCKED BEFORE EXECUTION
+
+Linux returned:
+
+`EACCES`
+
+The requested program never started.
+
+That happened on a real machine.
+
+The receipts are in this repository.
+
+---
+
+# 🧬 THEN WE WENT BELOW THAT.
+
+Once the live enforcement path worked, the next question became much stranger:
+
+# **HOW EARLY CAN THIS IDEA EXIST INSIDE LINUX ITSELF?**
+
+That took us into:
+
+`kernel/fork.c`
+
+and one of the most fundamental operations inside an operating system:
+
+# **the birth of a process.**
+
+When Linux creates a process, it constructs an enormous amount of state.
+
+Identity.
+
+Credentials.
+
+Memory.
+
+Files.
+
+Namespaces.
+
+Signals.
+
+Threads.
+
+Scheduling information.
+
+Security state.
+
+Linux carefully assembles a new computational actor before allowing the rest of the operating system to interact with it.
+
+And inside the Linux source is this line:
+
+> `Make it visible to the rest of the system, but dont wake it up yet.`
+
+That sentence describes something remarkable.
+
+There is a moment where Linux has constructed the task...
+
+but that task has **not yet fully crossed into system visibility.**
+
+A boundary exists between:
+
+# `BEING CONSTRUCTED`
+
+and
+
+# `BECOMING PART OF THE RUNNING SYSTEM`
+
+That became the next Supreme Computation insertion point.
+
+---
+
+# ⚡ THE PRE-VISIBILITY GATE
+
+This repository contains:
+
+`sc_preexec_gate_v2.patch`
+
+Pinned against Linux:
+
+`v7.0`
+
+Exact upstream commit:
+
+`028ef9c96e96197026887c0f092424679298aae8`
+
+Inside `copy_process()`, Linux reaches:
+
+```c
+copy_thread(p, args)
 ```
 
-The apply path refuses the consequence unless the pinned source, patch digest, reference digest, invariant contract, and authorization boundary all agree.
+Supreme Computation introduces an optional coherence check immediately after that stage and before later process visibility.
+
+In plain English:
+
+# LINUX BUILDS THE NEW PROCESS.
+
+# THE STATE IS CHECKED.
+
+# ONLY A COHERENT STATE CONTINUES.
+
+The gate checks concrete Linux relationships such as:
+
+- credentials existing;
+- signal structures existing;
+- namespace state existing;
+- memory state making sense;
+- file state making sense;
+- thread flags agreeing with the relationships Linux requires.
+
+If the required state is contradictory:
+
+# `-EPERM`
+
+The process does not continue through that path.
 
 ---
 
-## 📂 Read these next
+# 👁️ NOW THE SCIENCE-FICTION PART BECOMES REAL.
 
-- [DIGITAL_SOVEREIGNTY_BLUEPRINT.md](DIGITAL_SOVEREIGNTY_BLUEPRINT.md) — the whole architecture in plain English
-- [PRE_EXECUTION_GAP.md](PRE_EXECUTION_GAP.md) — exact Linux insertion point
-- [PATCH_NOTES.md](PATCH_NOTES.md) — what v2 does and does not prove
-- [distribution/README.md](distribution/README.md) — deterministic distribution
-- [LIVE_PROOF.md](LIVE_PROOF.md) — live BPF-LSM receipts
-- [sc_preexec_gate_v2.patch](sc_preexec_gate_v2.patch) — source-layer patch
-- [scctl.py](scctl.py) — one command surface for proof / receipt / authorized apply
+For most people, a computer feels like a machine that receives commands.
+
+You press a button.
+
+It obeys.
+
+Software calls a function.
+
+It executes.
+
+An AI agent chooses a tool.
+
+The tool runs.
+
+Automation makes a decision.
+
+Infrastructure changes.
+
+But modern machines are becoming capable of creating larger and larger consequences with less and less human interaction.
+
+AI can request actions.
+
+Software can move money.
+
+Cloud automation can alter thousands of computers.
+
+Robots can affect physical space.
+
+Autonomous systems can operate faster than a human can review every individual decision.
+
+Science fiction usually imagines the danger as:
+
+# **THE MACHINE BECOMES TOO INTELLIGENT.**
+
+But intelligence is only half of the equation.
+
+The more important engineering question may be:
+
+# **WHEN DOES INTELLIGENCE RECEIVE PERMISSION TO BECOME CONSEQUENCE?**
+
+That is where Supreme Computation lives.
+
+Between:
+
+`THE MACHINE WANTS TO ACT`
+
+and
+
+`THE ACTION BECOMES REAL`
 
 ---
 
-## 🌍 Supreme Computation
+# 🤖 THIS IS WHERE THE TERMINATOR / MATRIX PARALLEL ACTUALLY BELONGS.
 
-**Website:** https://SupremeComputation.org
-**Reference implementation:** https://github.com/KnowledgeeKZA3224/scqos-reference-implementation
+Skynet is fictional.
+
+The architectural question is not.
+
+The frightening property of Skynet was not merely that software could reason.
+
+It was:
+
+`REASONING → AUTHORITY → CONSEQUENCE`
+
+with no meaningful independent proof boundary between them.
+
+The Matrix takes the idea even further:
+
+the machine controls the environment that defines what becomes computationally real.
+
+Supreme Computation approaches the same relationship from the opposite direction:
+
+# **CAPABILITY DOES NOT EQUAL PERMISSION.**
+
+A machine may be able to do something.
+
+That does not mean the machine has proven that it should.
+
+So the architecture inserts:
+
+# `PROOF`
+
+between:
+
+# `INTENTION`
+
+and:
+
+# `CONSEQUENCE`
+
+That is why the science-fiction parallel is useful.
+
+Not because Linux became Skynet.
+
+Because we now have real systems powerful enough that the old fictional question has become a legitimate engineering question.
+
+---
+
+# 🌐 DIGITAL SOVEREIGNTY
+
+Digital sovereignty means the owner does not simply inherit whatever decision the machine makes.
+
+The owner can inspect:
+
+🔎 **the rule**
+
+🧬 **the source**
+
+🔐 **the authorization**
+
+📍 **the exact target**
+
+🧾 **the receipt**
+
+👁️ **the witness**
+
+And the computer can be made to stop when those things do not agree.
+
+Not after the damage.
+
+# BEFORE THE GOVERNED CONSEQUENCE.
+
+---
+
+# 🧭 THE 8 INVARIANTS
+
+Supreme Computation evaluates the transition through:
+
+**Time · Continuity · Alignment · Genesis · Boundary · Reference · Causality · Consciousness / Observer**
+
+In normal language:
+
+**⏱️ Time**  
+Is this authorization still valid now?
+
+**🔗 Continuity**  
+Does this state correctly follow the state before it?
+
+**🎯 Alignment**  
+Is the requested action actually the action that was approved?
+
+**🌱 Genesis**  
+Can we identify where this state came from?
+
+**🚧 Boundary**  
+Is the consequence inside the allowed limits?
+
+**📍 Reference**  
+Are we acting on the exact thing that was measured?
+
+**➡️ Causality**  
+Does the evidence actually justify this result?
+
+**👁️ Observer**  
+Can another observer reproduce and verify the decision?
+
+The goal is not eight unrelated checkboxes.
+
+# THE TRANSITION HAS TO MAKE SENSE AS ONE WHOLE STATE.
+
+---
+
+# 🧾 WHAT HAS ACTUALLY BEEN PROVEN
+
+## LIVE LINUX ENFORCEMENT ✅
+
+A governed process with the required execution grant:
+
+`PERMIT → EXECUTED`
+
+A governed process deliberately resumed without that grant:
+
+`NO GRANT → EACCES → DID NOT EXECUTE`
+
+That enforcement happened through Linux BPF-LSM.
+
+---
+
+## SOURCE-LAYER GATE ✅
+
+Linux source pinned to:
+
+`028ef9c96e96197026887c0f092424679298aae8`
+
+Exact `kernel/fork.c` SHA-256:
+
+`b393692a3f342f9a197da17a3f94754faafc4a44ef06b35e9867d5dc6dc8baa0`
+
+SC patch SHA-256:
+
+`9991d9ff62cddb0033b2d6e7e73452f699959f73ae1bd361d0e4258f7dc0e554`
+
+Result:
+
+# ✅ 8 / 8 INVARIANTS — PERMIT
+
+Patch compatibility:
+
+# ✅ PASS
+
+Unauthorized patch application:
+
+# 🛑 REJECT
+
+Explicitly authorized application against the pinned source:
+
+# ✅ PERMIT
+
+Deterministic release reproduction:
+
+# ✅ PASS
+
+---
+
+# ⚠️ WHAT WE HAVE NOT CLAIMED
+
+The new source patch has not yet been represented as a freshly compiled and booted production kernel.
+
+That requires its own proof chain:
+
+# `PATCH → BUILD → BOOT → TRACE → STRESS → DENY → RECEIPT`
+
+We do not collapse those stages into one claim.
+
+Because Supreme Computation applies the same standard to itself:
+
+# **IF WE CANNOT PROVE IT, WE DO NOT CALL IT PROVEN.**
+
+---
+
+# 🌌 WHY THIS FEELS LIKE SCIENCE FICTION
+
+For generations, science fiction imagined computers powerful enough that humanity would eventually need to ask:
+
+> **How do we remain in control once machines can make consequential decisions themselves?**
+
+We are reaching the engineering version of that question.
+
+Not because Skynet exists.
+
+Because increasingly autonomous software **does** exist.
+
+And operating systems are the layer where a software decision finally becomes machine behavior.
+
+So instead of waiting for a fictional future and asking how to regain control afterward...
+
+this repository explores something much simpler:
+
+# **PUT A PROVABLE BOUNDARY BETWEEN MACHINE INTENTION AND MACHINE CONSEQUENCE.**
+
+Linux is where we proved the first pieces of it.
+
+---
+
+# 📂 START HERE
+
+- 🧾 [LIVE_PROOF.md](LIVE_PROOF.md) — live Linux enforcement receipts
+- 🔬 [HOW_IT_WORKS.md](HOW_IT_WORKS.md) — the live mechanism in plain English
+- 🧠 [DIGITAL_SOVEREIGNTY_BLUEPRINT.md](DIGITAL_SOVEREIGNTY_BLUEPRINT.md) — the broader architecture
+- 🐧 [sc_preexec_gate_v2.patch](sc_preexec_gate_v2.patch) — the source-layer gate
+- 📍 [SOURCE_REFERENCE.json](SOURCE_REFERENCE.json) — exact pinned Linux source
+- 🔐 [results/SOURCE_LAYER_PROOF.json](results/SOURCE_LAYER_PROOF.json) — eight-invariant proof receipt
+- 🚧 [distribution/DEPLOYMENT_BOUNDARY.md](distribution/DEPLOYMENT_BOUNDARY.md) — authorized deployment boundary
+
+---
+
+# 🌍 SUPREME COMPUTATION
+
 **Creator:** Knowledgee KZA
 
-### One sentence
+**Website:** https://SupremeComputation.org
 
-**Supreme Computation makes a governed machine action prove it deserves to become reality before the machine releases the consequence.** 🧠⚡🐧
+**Reference implementation:** https://github.com/KnowledgeeKZA3224/scqos-reference-implementation
+
+---
+
+# 🧠⚡ ONE SENTENCE
+
+## **SUPREME COMPUTATION TURNS “THE COMPUTER WAS TOLD TO DO IT” INTO “THE COMPUTER HAD TO PROVE WHY IT WAS ALLOWED TO DO IT BEFORE THE CONSEQUENCE EXISTED.”**
