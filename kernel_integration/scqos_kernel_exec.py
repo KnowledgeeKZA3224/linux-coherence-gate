@@ -2,9 +2,18 @@
 """
 SCQOS kernel source-layer launcher.
 
-The exact child PID, executable inode, argv, running kernel and active LSM
-chain are inserted into the transition proposition before governance.
+The child PID, exact already-open executable object, argv, running kernel and
+active LSM chain are inserted into the transition proposition before governance.
 Only a PERMIT receipt for those exact facts creates a one-shot BPF-LSM grant.
+
+v3 hardening:
+- open the executable before governance;
+- hash/fstat the open file descriptor, not a pathname reopened later;
+- keep that descriptor alive across the governance interval;
+- revalidate the same descriptor immediately before the grant;
+- reject if the human-readable pathname no longer names that same object;
+- exec the already-open object, so pathname replacement cannot substitute a
+  different inode after proof.
 """
 from __future__ import annotations
 
@@ -92,16 +101,33 @@ def _resolve_executable(value: str) -> Path:
     return Path(resolved).resolve(strict=True)
 
 
-def _sha256_file(path: Path) -> str:
+def _open_executable(path: Path) -> int:
+    flags = os.O_RDONLY
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    fd = os.open(str(path), flags)
+    # The child must retain this descriptor until exec-from-fd is issued.
+    os.set_inheritable(fd, True)
+    return fd
+
+
+def _sha256_fd(fd: int) -> str:
     digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+    original_offset = os.lseek(fd, 0, os.SEEK_CUR)
+    try:
+        os.lseek(fd, 0, os.SEEK_SET)
+        while True:
+            chunk = os.read(fd, 1024 * 1024)
+            if not chunk:
+                break
             digest.update(chunk)
+    finally:
+        os.lseek(fd, original_offset, os.SEEK_SET)
     return digest.hexdigest()
 
 
-def _file_identity(path: Path) -> dict[str, str]:
-    st = path.stat()
+def _file_identity_fd(fd: int) -> dict[str, str]:
+    st = os.fstat(fd)
     if not stat.S_ISREG(st.st_mode):
         raise ValueError("target executable must be a regular file")
     return {
@@ -113,8 +139,32 @@ def _file_identity(path: Path) -> dict[str, str]:
         "size": str(int(st.st_size)),
         "mtime_ns": str(int(st.st_mtime_ns)),
         "ctime_ns": str(int(st.st_ctime_ns)),
-        "sha256": _sha256_file(path),
+        "sha256": _sha256_fd(fd),
     }
+
+
+def _path_still_names_identity(path: Path, identity: dict[str, str]) -> bool:
+    try:
+        st = path.stat()
+    except OSError:
+        return False
+    return (
+        str(int(st.st_dev)) == identity["stat_dev"]
+        and str(int(st.st_ino)) == identity["inode"]
+    )
+
+
+def _exec_open_file(fd: int, argv: list[str]) -> None:
+    env = os.environ.copy()
+
+    # Python exposes fd-based execve on Linux builds that support execveat/fexecve.
+    # That is the preferred path because it never re-resolves the original pathname.
+    if os.execve in os.supports_fd:
+        os.execve(fd, argv, env)
+
+    # Fallback still resolves only the inherited descriptor reference, not the
+    # original executable pathname.
+    os.execve(f"/proc/self/fd/{fd}", argv, env)
 
 
 def _kill_stopped_child(pid: int) -> None:
@@ -145,18 +195,21 @@ def main() -> int:
         raise SystemExit("SCQOS BPF-LSM v2 maps are not pinned")
 
     exe = _resolve_executable(args.command[0])
-    identity = _file_identity(exe)
-
+    exe_fd = _open_executable(exe)
+    identity = _file_identity_fd(exe_fd)
     request_data = json.loads(Path(args.request).read_text())
 
     pid = os.fork()
     if pid == 0:
-        os.kill(os.getpid(), signal.SIGSTOP)
-        os.execv(str(exe), [str(exe), *args.command[1:]])
-        os._exit(127)
+        try:
+            os.kill(os.getpid(), signal.SIGSTOP)
+            _exec_open_file(exe_fd, [str(exe), *args.command[1:]])
+        finally:
+            os._exit(127)
 
     _, status = os.waitpid(pid, os.WUNTRACED)
     if not os.WIFSTOPPED(status):
+        os.close(exe_fd)
         _kill_stopped_child(pid)
         raise RuntimeError("child did not stop before exec")
 
@@ -164,6 +217,7 @@ def main() -> int:
         "pid": pid,
         "path": str(exe),
         "argv": [str(exe), *args.command[1:]],
+        "exec_reference": "already-open-file-descriptor",
         **identity,
         "kernel_release": platform.release(),
         "active_lsms": _active_lsms(),
@@ -199,10 +253,18 @@ def main() -> int:
             _kill_stopped_child(pid)
             return 2 if result.decision == "HOLD" else 3
 
-        # Reference must still be the exact executable that was governed.
-        if _file_identity(exe) != identity:
+        # Revalidate the exact open object that governance hashed. A pathname
+        # replacement cannot change this fd's inode/content identity.
+        if _file_identity_fd(exe_fd) != identity:
             _kill_stopped_child(pid)
-            raise RuntimeError("executable changed after governance")
+            raise RuntimeError("open executable object changed after governance")
+
+        # Preserve Reference as well: the user-facing pathname must still point
+        # at the governed inode at grant time. If it drifted, fail closed even
+        # though fd-based exec would otherwise remain safe from substitution.
+        if not _path_still_names_identity(exe, identity):
+            _kill_stopped_child(pid)
+            raise RuntimeError("executable pathname drifted after governance")
 
         governed_key = struct.pack("<I", pid)
         governed_value = struct.pack("<B", 1)
@@ -241,6 +303,8 @@ def main() -> int:
     except BaseException:
         _kill_stopped_child(pid)
         raise
+    finally:
+        os.close(exe_fd)
 
 
 if __name__ == "__main__":
