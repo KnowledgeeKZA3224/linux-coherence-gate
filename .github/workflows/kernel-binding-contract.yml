@@ -36,11 +36,12 @@ jobs:
           sudo apt-get install -y clang linux-tools-common linux-tools-generic libbpf-dev libelf-dev zlib1g-dev gcc
           test -r /sys/kernel/btf/vmlinux
           mkdir -p /tmp/scqos-build
-          BPFTOOL="$(command -v bpftool || true)"
+          BPFTOOL="$(find /usr/lib/linux-tools -type f -name bpftool -perm -111 | sort | tail -n1)"
           if [ -z "$BPFTOOL" ]; then
-            BPFTOOL="$(find /usr/lib/linux-tools -type f -name bpftool | sort | tail -n1)"
+            echo "SCQOS_HOLD reason=bpftool_binary_not_found" >&2
+            exit 21
           fi
-          test -n "$BPFTOOL"
+          "$BPFTOOL" version
           "$BPFTOOL" btf dump file /sys/kernel/btf/vmlinux format c > /tmp/scqos-build/vmlinux.h
           clang -O2 -g -target bpf -D__TARGET_ARCH_x86             -I/tmp/scqos-build             -I/usr/include/$(uname -m)-linux-gnu             -c kernel_integration/scqos_exec_gate.bpf.c             -o /tmp/scqos-build/scqos_exec_gate.bpf.o
           gcc -O2 kernel_integration/scqos_exec_gate_loader.c             -o /tmp/scqos-build/scqos_exec_gate_loader             -lbpf -lelf -lz
