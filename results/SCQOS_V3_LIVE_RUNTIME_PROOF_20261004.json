@@ -1,0 +1,92 @@
+{
+  "branch": "scqos-v3-lifecycle-hardening-20261004",
+  "closure": {
+    "end_to_end_permit": true,
+    "expired_denied_eacces": true,
+    "kernel_one_shot_permit": true,
+    "missing_grant_denied_eacces": true,
+    "nonce_mismatch_denied_eacces": true,
+    "replay_denied_eacces": true
+  },
+  "generated_at": 1791102926.4019604,
+  "head_sha": "7d92a360a40757f700f1d166eb9b67fc73d288c0",
+  "kernel": "7.0.0-34-generic",
+  "loaded_object_sha256": "37f7fa26e254872bfd997c7b5e55547ee49653c4dae35f93a29b60985e25aa70",
+  "lsm_chain": "lockdown,capability,landlock,yama,apparmor,bpf,ima,evm",
+  "results": {
+    "end_to_end": {
+      "exit_code": 0,
+      "marker_created": true,
+      "stderr": "",
+      "stdout": "{\"decision\": \"PERMIT\", \"execution_authorized\": true, \"final_proof\": \"2f6a5020045cd1d88c928092debbbff4be3e8d63748ac618116df2294f675ce3\", \"kernel_binding\": {\"active_lsms\": \"lockdown,capability,landlock,yama,apparmor,bpf,ima,evm\", \"argv\": [\"/usr/lib/cargo/bin/coreutils/touch\", \"/tmp/scqos-v3-e2e-marker\"], \"cgroup_id\": \"96088\", \"ctime_ns\": \"1780178157196301317\", \"device_major\": \"8\", \"device_minor\": \"6\", \"effective_gid\": \"0\", \"effective_uid\": \"0\", \"inode\": \"7602671\", \"kernel_dev\": \"8388614\", \"kernel_release\": \"7.0.0-34-generic\", \"mtime_ns\": \"1776343279000000000\", \"path\": \"/usr/lib/cargo/bin/coreutils/touch\", \"pid\": 565876, \"sha256\": \"48893b0fb21436b54619db80486e83ef39dfccaf1aefe83dfa00c02d6146e8c0\", \"size\": \"11352352\", \"stat_dev\": \"2054\", \"uid_gid\": \"0\"}, \"receipt_hash\": \"ffe73e8da8ff006b08ab8421fb4cb09901b9c3c4e91b9d74c1308a3fe41b1327\", \"transition_id\": \"534f224c16765daf789f6170e0d6c32e30c3040a7e947d9087878dd4ba1003cd\"}"
+    },
+    "expired": {
+      "errno": 13,
+      "exec_allowed": false,
+      "exit_code": 113,
+      "expiry_ns": 107368162689126,
+      "governed_present_after": false,
+      "key_hex": "93a208000000000058770100000000000600800000000000bc0c740000000000d889000000000000",
+      "matching_grant_present_after": false,
+      "mode": "expired",
+      "name": "expired_governed_denied",
+      "nonce": 11894006615886045843,
+      "pid": 565907
+    },
+    "kernel_permit": {
+      "errno": null,
+      "exec_allowed": true,
+      "exit_code": 0,
+      "expiry_ns": 107368021345597,
+      "governed_present_after": false,
+      "key_hex": "7ca208000000000058770100000000000600800000000000bc0c740000000000d889000000000000",
+      "matching_grant_present_after": false,
+      "mode": "permit",
+      "name": "one_shot_permit",
+      "nonce": 11894006615886045820,
+      "pid": 565884
+    },
+    "missing_grant": {
+      "errno": 13,
+      "exec_allowed": false,
+      "exit_code": 113,
+      "expiry_ns": 107368076733847,
+      "governed_present_after": true,
+      "key_hex": "83a208000000000058770100000000000600800000000000bc0c740000000000d889000000000000",
+      "matching_grant_present_after": false,
+      "mode": "missing_grant",
+      "name": "missing_grant_denied",
+      "nonce": 11894006615886045827,
+      "pid": 565891
+    },
+    "nonce_mismatch": {
+      "errno": 13,
+      "exec_allowed": false,
+      "exit_code": 113,
+      "expiry_ns": 107368113683931,
+      "governed_present_after": false,
+      "key_hex": "89a208000000000058770100000000000600800000000000bc0c740000000000d889000000000000",
+      "matching_grant_present_after": false,
+      "mode": "nonce_mismatch",
+      "name": "nonce_mismatch_denied",
+      "nonce": 11894006615886045833,
+      "pid": 565897
+    },
+    "replay": {
+      "errno": 13,
+      "exec_allowed": false,
+      "exit_code": 113,
+      "expiry_ns": 107368198434914,
+      "governed_present_after": true,
+      "key_hex": "99a208000000000058770100000000000600800000000000bc0c740000000000d889000000000000",
+      "matching_grant_present_after": false,
+      "mode": "replay",
+      "name": "prior_lifecycle_grant_replay_denied",
+      "nonce": 11894006615886045849,
+      "pid": 565913
+    }
+  },
+  "schema": "SCQOS_LINUX_V3_LIVE_RUNTIME_PROOF_V1",
+  "service_active": true,
+  "state": "PERMIT"
+}
