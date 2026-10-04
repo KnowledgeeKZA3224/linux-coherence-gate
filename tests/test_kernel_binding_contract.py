@@ -1,3 +1,4 @@
+import re
 import unittest
 from pathlib import Path
 
@@ -27,17 +28,25 @@ class KernelBindingContractTests(unittest.TestCase):
             self.assertIn(token, BPF)
 
     def test_permit_is_consumed_before_allow(self):
-        delete_grant = BPF.index("bpf_map_delete_elem(&exec_grants, &key);", BPF.index("SCQOS_REASON_EXPIRY_MISMATCH"))
-        delete_governed = BPF.index("bpf_map_delete_elem(&governed, &gk);", delete_grant)
+        delete_grant = BPF.index(
+            "bpf_map_delete_elem(&exec_grants, &key);",
+            BPF.index("SCQOS_REASON_EXPIRY_MISMATCH"),
+        )
+        delete_governed = BPF.index(
+            "bpf_map_delete_elem(&governed, &gk);", delete_grant
+        )
         final_audit = BPF.index("SCQOS_REASON_PERMIT", delete_governed)
         final_allow = BPF.index("return 0;", final_audit)
         self.assertLess(delete_grant, delete_governed)
         self.assertLess(delete_governed, final_allow)
 
     def test_userspace_map_layout_matches_kernel_contract(self):
-        self.assertIn('struct.pack("<IIQQQQ"', LAUNCHER)
-        self.assertIn('struct.pack(\n            "<QQQQ"', LAUNCHER)
-        self.assertIn('struct.pack("<QQ", expires_ns, nonce)', LAUNCHER)
+        self.assertRegex(LAUNCHER, r'struct\.pack\(\s*"<IIQQQQ"')
+        self.assertRegex(LAUNCHER, r'struct\.pack\(\s*"<QQQQ"')
+        self.assertRegex(
+            LAUNCHER,
+            r'struct\.pack\(\s*"<QQ"\s*,\s*expires_ns\s*,\s*nonce\s*\)',
+        )
 
     def test_fail_closed_map_install_order(self):
         governed = LAUNCHER.index("_bpftool_update(GOVERNED")
