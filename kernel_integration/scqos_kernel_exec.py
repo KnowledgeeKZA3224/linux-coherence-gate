@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """
-SCQOS kernel source-layer launcher.
+SCQOS kernel source-layer launcher, lifecycle-bound v3 contract.
 
-The exact child PID, executable inode, argv, running kernel and active LSM
-chain are inserted into the transition proposition before governance.
-Only a PERMIT receipt for those exact facts creates a one-shot BPF-LSM grant.
+The stopped child, executable identity, cgroup boundary, effective credentials,
+argv, running kernel and active LSM chain are inserted into the transition
+proposition before governance. Only a PERMIT receipt for those exact facts
+creates a one-shot BPF-LSM grant.
+
+The kernel hook independently requires the same cgroup, credentials, executable
+device/inode/size, decision nonce and expiry before consuming the permit.
 """
 from __future__ import annotations
 
@@ -117,6 +121,36 @@ def _file_identity(path: Path) -> dict[str, str]:
     }
 
 
+def _cgroup_v2_id(pid: int) -> int:
+    """
+    Resolve the child's unified cgroup-v2 ID.
+
+    bpf_get_current_cgroup_id() is the cgroup-v2 kernfs inode ID, so the
+    userspace grant binds the same boundary the LSM hook observes.
+    """
+    for line in Path(f"/proc/{pid}/cgroup").read_text().splitlines():
+        hierarchy, controllers, relative = line.split(":", 2)
+        if hierarchy == "0" and controllers == "":
+            path = Path("/sys/fs/cgroup") / relative.lstrip("/")
+            return int(path.stat().st_ino)
+    raise RuntimeError("unified cgroup-v2 membership unavailable")
+
+
+def _uid_gid() -> int:
+    # bpf_get_current_uid_gid(): low 32 bits UID, high 32 bits GID.
+    return ((os.getegid() & 0xFFFFFFFF) << 32) | (os.geteuid() & 0xFFFFFFFF)
+
+
+def _child_is_stopped(pid: int) -> bool:
+    try:
+        for line in Path(f"/proc/{pid}/status").read_text().splitlines():
+            if line.startswith("State:"):
+                return "\tT" in line or "\tt" in line
+    except OSError:
+        return False
+    return False
+
+
 def _kill_stopped_child(pid: int) -> None:
     try:
         os.kill(pid, signal.SIGKILL)
@@ -142,11 +176,10 @@ def main() -> int:
     if not 100 <= args.ttl_ms <= 5000:
         raise SystemExit("ttl-ms must be between 100 and 5000")
     if not GOVERNED.exists() or not EXEC_GRANTS.exists():
-        raise SystemExit("SCQOS BPF-LSM v2 maps are not pinned")
+        raise SystemExit("SCQOS BPF-LSM maps are not pinned")
 
     exe = _resolve_executable(args.command[0])
     identity = _file_identity(exe)
-
     request_data = json.loads(Path(args.request).read_text())
 
     pid = os.fork()
@@ -160,14 +193,25 @@ def main() -> int:
         _kill_stopped_child(pid)
         raise RuntimeError("child did not stop before exec")
 
+    cgroup_id = _cgroup_v2_id(pid)
+    uid_gid = _uid_gid()
     binding = {
         "pid": pid,
+        "cgroup_id": str(cgroup_id),
+        "uid_gid": str(uid_gid),
+        "effective_uid": str(os.geteuid()),
+        "effective_gid": str(os.getegid()),
         "path": str(exe),
         "argv": [str(exe), *args.command[1:]],
         **identity,
         "kernel_release": platform.release(),
         "active_lsms": _active_lsms(),
     }
+
+    governed_key = struct.pack("<I", pid)
+    exec_key: bytes | None = None
+    governed_written = False
+    grant_written = False
 
     try:
         request_data.setdefault("proposed_transition", {})[
@@ -181,6 +225,8 @@ def main() -> int:
         ] = {
             "kernel_release": binding["kernel_release"],
             "active_lsms": binding["active_lsms"],
+            "cgroup_id": binding["cgroup_id"],
+            "uid_gid": binding["uid_gid"],
         }
 
         request = TransitionRequest.model_validate(request_data)
@@ -199,48 +245,75 @@ def main() -> int:
             _kill_stopped_child(pid)
             return 2 if result.decision == "HOLD" else 3
 
-        # Reference must still be the exact executable that was governed.
+        # Final userspace continuity checks happen while the child is still
+        # stopped. Any divergence forces a fresh governance cycle.
+        if not _child_is_stopped(pid):
+            _kill_stopped_child(pid)
+            raise RuntimeError("child left stopped state before grant installation")
+        if _cgroup_v2_id(pid) != cgroup_id:
+            _kill_stopped_child(pid)
+            raise RuntimeError("child cgroup changed after governance")
+        if _uid_gid() != uid_gid:
+            _kill_stopped_child(pid)
+            raise RuntimeError("launcher credentials changed after governance")
         if _file_identity(exe) != identity:
             _kill_stopped_child(pid)
             raise RuntimeError("executable changed after governance")
 
-        governed_key = struct.pack("<I", pid)
-        governed_value = struct.pack("<B", 1)
+        nonce = _nonce(result.receipt_hash)
+        expires_ns = time.monotonic_ns() + args.ttl_ms * 1_000_000
 
-        # Kernel key layout: u32 tgid + u32 pad + u64 dev + u64 ino.
+        # Kernel key layout:
+        # u32 tgid + u32 pad + u64 cgroup_id + u64 dev + u64 ino + u64 size.
         exec_key = struct.pack(
-            "<IIQQ",
+            "<IIQQQQ",
             pid,
             0,
+            cgroup_id,
             int(identity["kernel_dev"]),
             int(identity["inode"]),
+            int(identity["size"]),
         )
-
-        expires_ns = time.monotonic_ns() + args.ttl_ms * 1_000_000
-        grant_value = struct.pack(
-            "<QQ",
+        # Kernel governed value:
+        # u64 expires_ns + u64 nonce + u64 cgroup_id + u64 uid_gid.
+        governed_value = struct.pack(
+            "<QQQQ",
             expires_ns,
-            _nonce(result.receipt_hash),
+            nonce,
+            cgroup_id,
+            uid_gid,
         )
+        grant_value = struct.pack("<QQ", expires_ns, nonce)
 
+        # Fail closed across the two-map installation. If the child were
+        # unexpectedly resumed after the first write, governed-without-grant
+        # denies exec. Never install grant first.
         _bpftool_update(GOVERNED, governed_key, governed_value)
+        governed_written = True
         _bpftool_update(EXEC_GRANTS, exec_key, grant_value)
+        grant_written = True
 
-        try:
-            os.kill(pid, signal.SIGCONT)
-            _, child_status = os.waitpid(pid, 0)
-            if os.WIFEXITED(child_status):
-                return os.WEXITSTATUS(child_status)
-            if os.WIFSIGNALED(child_status):
-                return 128 + os.WTERMSIG(child_status)
-            return 1
-        finally:
-            _bpftool_delete(GOVERNED, governed_key)
-            _bpftool_delete(EXEC_GRANTS, exec_key)
+        if not _child_is_stopped(pid):
+            raise RuntimeError("child left stopped state before release")
+
+        os.kill(pid, signal.SIGCONT)
+        _, child_status = os.waitpid(pid, 0)
+        if os.WIFEXITED(child_status):
+            return os.WEXITSTATUS(child_status)
+        if os.WIFSIGNALED(child_status):
+            return 128 + os.WTERMSIG(child_status)
+        return 1
 
     except BaseException:
         _kill_stopped_child(pid)
         raise
+    finally:
+        # Kernel normally consumes both records on a successful exec. These
+        # deletes make every failure and abnormal exit converge to no authority.
+        if grant_written and exec_key is not None:
+            _bpftool_delete(EXEC_GRANTS, exec_key)
+        if governed_written:
+            _bpftool_delete(GOVERNED, governed_key)
 
 
 if __name__ == "__main__":
